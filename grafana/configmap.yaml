@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: grafana
+data:
+  GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+  GF_AUTH_GENERIC_OAUTH_NAME: "Keycloak"
+  GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+  GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana-dev"
+  GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+  GF_AUTH_GENERIC_OAUTH_AUTH_URL: "http://keycloak.local/realms/teste/protocol/openid-connect/auth"
+  # GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://keycloak.local/realms/teste/protocol/openid-connect/token"
+  # GF_AUTH_GENERIC_OAUTH_API_URL: "http://keycloak.local/realms/teste/protocol/openid-connect/userinfo"
+  GF_SERVER_DOMAIN: "grafana.local"
+  GF_SERVER_ROOT_URL: "http://grafana.local/"
+  GF_SERVER_ENFORCE_DOMAIN: "true"      # opcional, ajuda a não aceitar localhost
+  GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+  # Grafana (no pod) fala com o Keycloak via Service do K8s:
+  GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://keycloak.keycloak.svc.cluster.local:8080/realms/teste/protocol/openid-connect/token"
+  GF_AUTH_GENERIC_OAUTH_API_URL:   "http://keycloak.keycloak.svc.cluster.local:8080/realms/teste/protocol/openid-connect/userinfo"

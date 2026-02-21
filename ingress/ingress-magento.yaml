@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: magento
+  namespace: magento
+spec:
+  rules:
+    - host: magento.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: magento
+                port:
+                  number: 80

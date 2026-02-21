@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magento
+  namespace: magento
+spec:
+  selector:
+    matchLabels:
+      app: magento
+  template:
+    metadata:
+      labels:
+        app: magento
+    spec:
+      containers:
+        - name: magento-nginx
+          image: markoshust/magento-nginx:1.18-8
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+        - name: phpfpm
+          image: markoshust/magento-php:8.1-fpm
+          env:
+            - name: MAGENTO_DATABASE_HOST
+              value: mysql
+            - name: MAGENTO_DATABASE_USER
+              value: magento
+            - name: MAGENTO_DATABASE_PASSWORD
+              value: magentopass
+            - name: MAGENTO_DATABASE_NAME
+              value: magento
+            - name: MAGENTO_ELASTICSEARCH_HOST
+              value: elasticsearch
+            - name: MAGENTO_REDIS_HOST
+              value: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: magento
+  namespace: magento
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: magento
+---
+containers:
+  - name: magento-nginx
+    image: markoshust/magento-nginx:1.18-8
+    ports:
+      - containerPort: 80
+      - containerPort: 443
+    volumeMounts:
+      - name: nginx-config
+        mountPath: /etc/nginx/conf.d/default.conf
+        subPath: default.conf
+  - name: phpfpm
+    image: markoshust/magento-php:8.1-fpm
+    env:
+      - name: MAGENTO_DATABASE_HOST
+        value: mysql
+      - name: MAGENTO_DATABASE_USER
+        value: magento
+      - name: MAGENTO_DATABASE_PASSWORD
+        value: magentopass
+      - name: MAGENTO_DATABASE_NAME
+        value: magento
+      - name: MAGENTO_ELASTICSEARCH_HOST
+        value: elasticsearch
+      - name: MAGENTO_REDIS_HOST
+        value: redis
+volumes:
+  - name: nginx-config
+    configMap:
+      name: magento-nginx-config
+
