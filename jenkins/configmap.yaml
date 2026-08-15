@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: jenkins-config
+  namespace: devops
+
+data:
+  casc.yaml: |
+    jenkins:
+      systemMessage: "Jenkins running on Kubernetes with Keycloak"
+
+      securityRealm:
+        oic:
+          clientId: "${KEYCLOAK_CLIENT_ID}"
+          clientSecret: "${KEYCLOAK_CLIENT_SECRET}"
+
+          wellKnownOpenIDConfigurationUrl: "http://keycloak.keycloak.svc.cluster.local:8080/realms/teste/.well-known/openid-configuration"
+
+          userNameField: "preferred_username"
+          fullNameFieldName: "name"
+          emailFieldName: "email"
+          groupsFieldName: "groups"
+
+          logoutFromOpenidProvider: true
+
+          escapeHatchEnabled: true
+          escapeHatchUsername: "${JENKINS_ADMIN_ID}"
+          escapeHatchSecret: "${JENKINS_ADMIN_PASSWORD}"
+
+      authorizationStrategy:
+        loggedInUsersCanDoAnything:
+          allowAnonymousRead: false
+
+    unclassified:
+      location:
+        url: "http://jenkins.local/"
+
+  plugins.txt: |
+    configuration-as-code
+    oic-auth
+    kubernetes
+    workflow-aggregator
+    git
+    blueocean

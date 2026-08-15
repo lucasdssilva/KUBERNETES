@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: jenkins
+  namespace: devops
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: jenkins
+
+  template:
+    metadata:
+      labels:
+        app: jenkins
+
+    spec:
+      securityContext:
+        fsGroup: 1000
+
+      initContainers:
+      - name: install-plugins
+
+        image: jenkins/jenkins:lts-jdk17
+
+        command:
+        - /bin/sh
+        - -c
+        - |
+          jenkins-plugin-cli --plugin-file /var/jenkins_config/plugins.txt
+
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /var/jenkins_home
+
+        - name: jenkins-config
+          mountPath: /var/jenkins_config
+
+      containers:
+      - name: jenkins
+
+        image: jenkins/jenkins:lts-jdk17
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 8080
+
+        - name: agent
+          containerPort: 50000
+
+        env:
+        - name: JAVA_OPTS
+          value: "-Djenkins.install.runSetupWizard=false"
+
+        - name: CASC_JENKINS_CONFIG
+          value: /var/jenkins_home/casc_configs/casc.yaml
+
+        - name: JENKINS_ADMIN_ID
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: JENKINS_ADMIN_ID
+
+        - name: JENKINS_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: JENKINS_ADMIN_PASSWORD
+
+        - name: KEYCLOAK_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: KEYCLOAK_CLIENT_ID
+
+        - name: KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: KEYCLOAK_CLIENT_SECRET
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /var/jenkins_home
+
+        - name: casc-config
+          mountPath: /var/jenkins_home/casc_configs
+
+        livenessProbe:
+          httpGet:
+            path: /login
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          timeoutSeconds: 5
+
+        readinessProbe:
+          httpGet:
+            path: /login
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+
+      volumes:
+      - name: jenkins-home
+        persistentVolumeClaim:
+          claimName: jenkins-pvc
+
+      - name: casc-config
+        configMap:
+          name: jenkins-config
+
+      - name: jenkins-config
+        configMap:
+          name: jenkins-config
